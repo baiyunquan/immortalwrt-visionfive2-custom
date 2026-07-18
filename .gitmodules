@@ -1,0 +1,8 @@
+[submodule "upstream/immortalwrt"]
+	path = upstream/immortalwrt
+	url = https://github.com/immortalwrt/immortalwrt.git
+	shallow = true
+[submodule "feeds/nikki"]
+	path = feeds/nikki
+	url = https://github.com/nikkinikki-org/OpenWrt-nikki.git
+	shallow = true

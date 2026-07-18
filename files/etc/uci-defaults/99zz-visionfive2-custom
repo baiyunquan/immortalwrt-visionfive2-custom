@@ -1,0 +1,38 @@
+#!/bin/sh
+
+set -eu
+
+uci -q batch <<'EOF'
+set system.@system[0].hostname='ImmortalWrt-VF2'
+set system.@system[0].zonename='Asia/Shanghai'
+set system.@system[0].timezone='CST-8'
+commit system
+EOF
+
+# Nikki's own defaults create an example subscription and a random API secret.
+# Remove both after Nikki's 99_* defaults have run, and leave all proxy paths off.
+if uci -q show nikki >/dev/null 2>&1; then
+	uci -q set nikki.config.enabled='0'
+	uci -q set nikki.config.profile=''
+	uci -q set nikki.proxy.enabled='0'
+	uci -q set nikki.mixin.authentication='0'
+	uci -q delete nikki.mixin.api_secret
+
+	while uci -q delete nikki.@subscription[0]; do :; done
+	while uci -q delete nikki.@authentication[0]; do :; done
+	uci -q commit nikki
+fi
+
+for service in nikki miniupnpd; do
+	if [ -x "/etc/init.d/$service" ]; then
+		"/etc/init.d/$service" disable
+		"/etc/init.d/$service" stop >/dev/null 2>&1 || true
+	fi
+done
+
+if uci -q get miniupnpd.config >/dev/null 2>&1; then
+	uci -q set miniupnpd.config.enabled='0'
+	uci -q commit miniupnpd
+fi
+
+exit 0

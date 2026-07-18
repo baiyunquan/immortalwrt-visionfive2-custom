@@ -1,0 +1,86 @@
+name: Build VisionFive 2 ImmortalWrt
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: visionfive2-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    env:
+      DEBIAN_FRONTEND: noninteractive
+      TZ: Asia/Shanghai
+
+    steps:
+      - name: Check out pinned sources
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 1
+
+      - name: Verify pinned source revisions
+        run: ./scripts/verify-versions.sh
+
+      - name: Install ImmortalWrt build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends \
+            ack antlr3 asciidoc autoconf automake autopoint binutils bison \
+            build-essential bzip2 ccache cmake cpio curl device-tree-compiler \
+            fastjar flex gawk genisoimage gettext gcc-multilib g++-multilib \
+            gdisk git gperf \
+            haveged help2man intltool libelf-dev libfuse-dev libglib2.0-dev \
+            libgmp-dev libltdl-dev libmpc-dev libmpfr-dev libncurses-dev \
+            libpython3-dev libreadline-dev libssl-dev libtool lrzsz \
+            msmtp ninja-build p7zip-full parted patch pkgconf python3 \
+            python3-pyelftools python3-setuptools qemu-utils rsync scons \
+            squashfs-tools subversion swig texinfo uglifyjs unzip vim wget \
+            xmlto xxd zlib1g-dev
+
+      - name: Update and install feeds
+        run: ./scripts/prepare-feeds.sh
+
+      - name: Load VisionFive 2 configuration and custom files
+        run: ./scripts/prepare-tree.sh
+
+      - name: Expand and verify minimal configuration
+        working-directory: upstream/immortalwrt
+        run: |
+          make defconfig
+          ./scripts/diffconfig.sh > "$RUNNER_TEMP/visionfive2.diffconfig"
+          diff -u "$GITHUB_WORKSPACE/configs/visionfive2.config" \
+            "$RUNNER_TEMP/visionfive2.diffconfig"
+          "$GITHUB_WORKSPACE/scripts/check-config.sh"
+
+      - name: Download sources
+        working-directory: upstream/immortalwrt
+        run: make download -j8
+
+      - name: Compile image
+        working-directory: upstream/immortalwrt
+        run: make -j"$(nproc)" || make -j1 V=s
+
+      - name: Collect compressed artifacts
+        id: artifacts
+        run: |
+          image="$(./scripts/collect-artifacts.sh)"
+          echo "image=$image" >> "$GITHUB_OUTPUT"
+
+      - name: Validate compressed image and partitions
+        run: ./scripts/validate-image.sh "${{ steps.artifacts.outputs.image }}"
+
+      - name: Upload VisionFive 2 build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: immortalwrt-visionfive2-v1.3b-${{ github.run_number }}
+          path: artifacts/
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 14
