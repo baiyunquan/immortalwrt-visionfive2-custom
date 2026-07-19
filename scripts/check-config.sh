@@ -3,9 +3,12 @@
 set -euo pipefail
 
 repo_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
-source_dir="$repo_root/upstream/immortalwrt"
+source_dir="${SOURCE_DIR:-$repo_root/upstream/immortalwrt}"
 config="$source_dir/.config"
 mihomo_makefile="$repo_root/feeds/nikki/mihomo-meta/Makefile"
+
+# shellcheck disable=SC1091
+source "$repo_root/versions.env"
 
 require_line() {
 	local line="$1"
@@ -31,6 +34,13 @@ required_y=(
 	CONFIG_PACKAGE_kmod-wireguard
 	CONFIG_PACKAGE_wireguard-tools
 	CONFIG_PACKAGE_luci-proto-wireguard
+	CONFIG_PACKAGE_luci-theme-argon
+	CONFIG_PACKAGE_luci-app-argon-config
+	CONFIG_PACKAGE_vlmcsd
+	CONFIG_PACKAGE_luci-app-vlmcsd
+	CONFIG_PACKAGE_docker
+	CONFIG_PACKAGE_dockerd
+	CONFIG_PACKAGE_luci-app-docker
 	CONFIG_PACKAGE_ttyd
 	CONFIG_PACKAGE_luci-app-ttyd
 	CONFIG_PACKAGE_curl
@@ -54,10 +64,33 @@ for symbol in "${required_y[@]}"; do
 	require_line "$symbol=y"
 done
 
-require_line 'CONFIG_STARFIVE_SD_BOOT_PARTSIZE=64'
+require_line 'CONFIG_STARFIVE_SD_BOOT_PARTSIZE=128'
 require_line 'CONFIG_TARGET_ROOTFS_PARTSIZE=512'
 require_line 'CONFIG_ARCH="riscv64"'
 require_line '# CONFIG_TARGET_ROOTFS_SQUASHFS is not set'
+require_line 'CONFIG_DOCKER_CGROUP_OPTIONS=y'
+require_line 'CONFIG_DOCKER_NET_MACVLAN=y'
+require_line 'CONFIG_DOCKER_STO_EXT4=y'
+
+check_custom_revision() {
+	local path="$1"
+	local expected="$2"
+	local label="$3"
+	local actual
+
+	actual="$(git -C "$path" rev-parse HEAD)"
+	if [[ "$actual" != "$expected" ]]; then
+		echo "$label revision mismatch: expected $expected, got $actual" >&2
+		exit 1
+	fi
+}
+
+check_custom_revision \
+	"$source_dir/package/custom/luci-theme-argon" \
+	"$ARGON_THEME_COMMIT" 'Argon theme'
+check_custom_revision \
+	"$source_dir/package/custom/luci-app-argon-config" \
+	"$ARGON_CONFIG_COMMIT" 'Argon configuration app'
 
 grep -Fqx 'PKG_SOURCE_PROTO:=git' "$mihomo_makefile"
 grep -Fqx 'PKG_SOURCE_URL:=https://github.com/MetaCubeX/mihomo.git' "$mihomo_makefile"

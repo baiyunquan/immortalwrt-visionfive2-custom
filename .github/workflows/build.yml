@@ -45,7 +45,10 @@ jobs:
             xmlto xxd zlib1g-dev
 
       - name: Update and install feeds
-        run: ./scripts/prepare-feeds.sh
+        run: |
+          df -hT
+          ./scripts/prepare-feeds.sh
+          ./scripts/install-custom-packages.sh
 
       - name: Load VisionFive 2 configuration and custom files
         run: ./scripts/prepare-tree.sh

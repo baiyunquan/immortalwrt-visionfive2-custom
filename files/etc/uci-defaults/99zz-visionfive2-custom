@@ -35,4 +35,11 @@ if uci -q get miniupnpd.config >/dev/null 2>&1; then
 	uci -q commit miniupnpd
 fi
 
+if uci -q get vlmcsd.config >/dev/null 2>&1; then
+	uci -q set vlmcsd.config.enabled='0'
+	uci -q commit vlmcsd
+	/etc/init.d/vlmcsd disable >/dev/null 2>&1 || true
+	/etc/init.d/vlmcsd stop >/dev/null 2>&1 || true
+fi
+
 exit 0

@@ -1,20 +1,25 @@
 # ImmortalWrt for StarFive VisionFive 2 v1.3B
 
-本仓库从固定版本的 ImmortalWrt 源码构建适用于 StarFive VisionFive 2 v1.3B 的自定义镜像。输出为 EXT4 根文件系统的紧凑型 `sdcard.img.gz`，分配 64 MiB 启动分区和 512 MiB 根分区。可以直接刷写，也可以在刷写前自动扩展成与目标 SD 卡容量匹配的镜像。
+本仓库从固定版本的 ImmortalWrt 源码构建适用于 StarFive VisionFive 2 v1.3B 的自定义镜像。输出为 EXT4 根文件系统的紧凑型 `sdcard.img.gz`，分配 128 MiB 启动分区和 512 MiB 根分区。可以直接刷写，也可以在刷写前自动扩展成与目标 SD 卡容量匹配的镜像。
 
 ## 预装内容
 
 - LuCI、简体中文、Nikki、LuCI Nikki、从源码交叉编译的 Mihomo Meta
+- Argon 主题及其 LuCI 配置页面（Argon 为默认主题）
+- Docker CLI、Docker Engine（dockerd）及支持 `riscv64` 的 LuCI Docker 页面
+- Vlmcsd 及其简体中文 LuCI 页面
 - WireGuard 内核模块、工具和 LuCI 协议支持
 - ttyd 及其 LuCI 页面
 - curl、GNU wget（`wget-ssl`）、bash、nano、htop、tmux、git、rsync
 - iperf3、tcpdump、ethtool、block-mount、e2fsprogs、parted、smartmontools
 
-Nikki 和 UPnP 默认关闭。镜像不包含代理订阅、API Token、预设 WireGuard 密钥或预设登录密码；首次登录后必须立即设置 root 密码。
+Nikki、Vlmcsd 和 UPnP 默认关闭。镜像不包含代理订阅、API Token、预设 WireGuard 密钥或预设登录密码；首次登录后必须立即设置 root 密码。
 
 ## 固定源码
 
-ImmortalWrt 与 OpenWrt-nikki 以 Git submodule 固定到明确 commit，SHA 同时记录在 [`versions.env`](versions.env)。Mihomo 由 Nikki feed 的 OpenWrt Go 构建规则针对目标 `riscv64` 从源码交叉编译，不下载其他架构的可执行文件。
+ImmortalWrt 与 OpenWrt-nikki 以 Git submodule 固定到明确 commit，SHA 同时记录在 [`versions.env`](versions.env)。Argon 主题和配置插件由构建脚本检出到同文件记录的固定 commit。Mihomo 由 Nikki feed 的 OpenWrt Go 构建规则针对目标 `riscv64` 从源码交叉编译，不下载其他架构的可执行文件。
+
+当前固定版本的 ImmortalWrt feeds 已包含维护中的 `vlmcsd`、`luci-app-vlmcsd`、`docker`、`dockerd` 和 `luci-app-docker`，因此直接使用这些官方 feed 包，避免克隆同名第三方包导致 Kconfig 重复定义。`luci-app-dockerman` 明确只允许 ARM/AArch64/x86_64，不能用于本仓库的 RISC-V 目标。`luci-app-accesscontrol` 未加入镜像。
 
 P3TERX/Actions-OpenWrt 与 wukongdaily/ImmortalWrt-ImageBuilder 仅用于参考 Actions 编排、依赖清单和镜像收集方式；它们不是构建输入，也没有复制其中的其他设备配置。参考时使用的 commit 同样记录在 `versions.env`。
 
@@ -37,7 +42,7 @@ gh workflow run build.yml
 gh run list --workflow build.yml --limit 1
 ```
 
-工作流更新并安装 feeds，执行 `make defconfig` 和 `scripts/diffconfig.sh` 一致性检查，下载源码、编译、校验 gzip 与 GPT 分区表，最后上传以下文件：
+工作流更新并安装 feeds，检出固定版本的 Argon 包，执行 `make defconfig` 和 `scripts/diffconfig.sh` 一致性检查，下载源码、编译、校验 gzip 与 GPT 分区表，最后上传以下文件：
 
 - `*visionfive2*v1.3b*sdcard.img.gz`
 - `*.manifest`
@@ -75,7 +80,7 @@ gzip -dc immortalwrt-*-visionfive2-v1.3b-*-sdcard.img.gz | \
 sync
 ```
 
-Windows 可使用 Rufus 或 balenaEtcher，直接选择下载的 `.img.gz`（若工具版本不支持 gzip，则先解压再写入）。基础镜像可写入更大的 SD 卡；若未提前扩展，rootfs 仍保持 512 MiB。面向 16 GB 及以上 SD 卡使用时，建议先在 Linux 或 WSL2 中生成与卡容量匹配的版本。
+Windows 可使用 Rufus 或 balenaEtcher，直接选择下载的 `.img.gz`（若工具版本不支持 gzip，则先解压再写入）。基础镜像可写入更大的 SD 卡；若未提前扩展，rootfs 仍保持 512 MiB。面向 16 GB 及以上 SD 卡使用时，建议先在 Linux 或 WSL2 中生成与卡容量匹配的版本。使用 Docker 前应先扩展镜像，否则 512 MiB 基础 rootfs 几乎没有可供容器镜像与卷使用的空间。
 
 ## 首次启动
 
@@ -98,6 +103,7 @@ WireGuard 没有预置私钥、公钥或 peer；请在设备上自行生成。Ni
 
 ```bash
 ./scripts/prepare-feeds.sh
+./scripts/install-custom-packages.sh
 ./scripts/prepare-tree.sh
 make -C upstream/immortalwrt defconfig
 (cd upstream/immortalwrt && ./scripts/diffconfig.sh)
@@ -108,4 +114,4 @@ make -C upstream/immortalwrt defconfig
 
 ## 仍需硬件验证
 
-CI 只能验证可构建性、压缩流、GPT 分区表和一次 768 MiB 自动扩展。首次发布后仍需在真实 VisionFive 2 v1.3B 上验证：U-Boot/SD 启动、两网口实际映射与吞吐、按实际卡容量扩展后的 EXT4 挂载、LuCI/ttyd、Nikki/Mihomo 运行、WireGuard 隧道、重启与断电恢复，以及不同品牌 16 GB SD 卡的实际容量兼容性。
+CI 只能验证可构建性、压缩流、GPT 分区表和一次 768 MiB 自动扩展。首次发布后仍需在真实 VisionFive 2 v1.3B 上验证：U-Boot/SD 启动、两网口实际映射与吞吐、按实际卡容量扩展后的 EXT4 挂载、LuCI/Argon/ttyd、Nikki/Mihomo 运行、WireGuard 隧道、Vlmcsd 手动启停、Docker daemon 与 RISC-V 容器运行、重启与断电恢复，以及不同品牌 16 GB SD 卡的实际容量兼容性。
