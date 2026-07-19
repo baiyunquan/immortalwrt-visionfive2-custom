@@ -8,20 +8,29 @@ if [[ $# -ne 1 ]]; then
 fi
 
 image="$(readlink -f -- "$1")"
-if [[ ! -f "$image" || "$image" != *sdcard.img.gz ]]; then
+if [[ ! -f "$image" || "$image" != *.img.gz ]]; then
 	echo "Not a compressed SD-card image: $image" >&2
 	exit 2
 fi
 
 gzip -t "$image"
 
+script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck disable=SC1091
+source "$script_dir/image-functions.sh"
+image_require_commands gzip cp stat sgdisk parted mktemp
+
 validation_dir="$(mktemp -d -t vf2-image-validation.XXXXXXXX)"
 trap 'rm -rf -- "$validation_dir"' EXIT
 sparse_image="$validation_dir/sdcard.img"
 
-# Preserve zero runs as holes so the temporary 12 GiB logical image consumes
-# only the space needed by populated blocks.
-gzip -dc -- "$image" | cp --sparse=always /dev/stdin "$sparse_image"
+image_decompress_sparse "$image" "$sparse_image"
+
+image_bytes="$(stat -c '%s' "$sparse_image")"
+if (( image_bytes % 512 != 0 )); then
+	echo "Image size is not sector aligned: $image_bytes bytes" >&2
+	exit 1
+fi
 
 sgdisk -v "$sparse_image"
 parted --script "$sparse_image" unit MiB print

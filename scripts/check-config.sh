@@ -54,8 +54,8 @@ for symbol in "${required_y[@]}"; do
 	require_line "$symbol=y"
 done
 
-require_line 'CONFIG_STARFIVE_SD_BOOT_PARTSIZE=256'
-require_line 'CONFIG_TARGET_ROOTFS_PARTSIZE=12288'
+require_line 'CONFIG_STARFIVE_SD_BOOT_PARTSIZE=64'
+require_line 'CONFIG_TARGET_ROOTFS_PARTSIZE=512'
 require_line 'CONFIG_ARCH="riscv64"'
 require_line '# CONFIG_TARGET_ROOTFS_SQUASHFS is not set'
 

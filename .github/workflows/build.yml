@@ -76,6 +76,14 @@ jobs:
       - name: Validate compressed image and partitions
         run: ./scripts/validate-image.sh "${{ steps.artifacts.outputs.image }}"
 
+      - name: Test automatic rootfs expansion
+        run: |
+          expanded_image="$RUNNER_TEMP/visionfive2-expanded-768MiB.img.gz"
+          ./scripts/expand-image.sh \
+            "${{ steps.artifacts.outputs.image }}" 768MiB "$expanded_image"
+          ./scripts/validate-image.sh "$expanded_image"
+          rm -f -- "$expanded_image"
+
       - name: Upload VisionFive 2 build artifacts
         uses: actions/upload-artifact@v4
         with:

@@ -1,6 +1,6 @@
 # ImmortalWrt for StarFive VisionFive 2 v1.3B
 
-本仓库从固定版本的 ImmortalWrt 源码构建适用于 StarFive VisionFive 2 v1.3B 的自定义镜像。输出为 EXT4 根文件系统的 `sdcard.img.gz`，分配 256 MiB 启动分区和 12,288 MiB 根分区，面向 16 GB 及以上 SD 卡。
+本仓库从固定版本的 ImmortalWrt 源码构建适用于 StarFive VisionFive 2 v1.3B 的自定义镜像。输出为 EXT4 根文件系统的紧凑型 `sdcard.img.gz`，分配 64 MiB 启动分区和 512 MiB 根分区。可以直接刷写，也可以在刷写前自动扩展成与目标 SD 卡容量匹配的镜像。
 
 ## 预装内容
 
@@ -43,8 +43,27 @@ gh run list --workflow build.yml --limit 1
 - `*.manifest`
 - `.config`
 - `sha256sums`
+- `expand-image.sh` 与 `image-functions.sh`
 
-解压后的约 12 GiB `.img` 只作为稀疏临时文件用于 `sgdisk`/`parted` 校验，验证结束即删除，不会上传。
+收集 artifact 时会补齐 StarFive 上游镜像缺少的备用 GPT 区域，重建备用 GPT，再执行 `gzip -t`、`sgdisk -v` 和 `parted print`。解压后的 `.img` 仅作为稀疏临时文件存在，验证结束即删除，不会上传。
+
+## 按 SD 卡容量扩展镜像
+
+Linux 下需要 `gzip`、`gdisk`、`parted`、`util-linux` 和 `e2fsprogs`。脚本会保留 loader 与 boot 分区，根据目标磁盘的最后可用 GPT 扇区计算 rootfs 的结束位置，然后扩展 EXT4 文件系统。
+
+生成适合标称 16 GB SD 卡的十进制容量镜像：
+
+```bash
+./scripts/expand-image.sh input-sdcard.img.gz 16GB output-16GB.img.gz
+```
+
+`16GB` 表示 16,000,000,000 字节；如果需要 16 GiB，可使用 `16GiB`。也可以插入 SD 卡并让脚本只读取设备的精确容量，设备本身不会被此命令写入：
+
+```bash
+./scripts/expand-image.sh input-sdcard.img.gz /dev/sdX output-exact.img.gz
+```
+
+创建 loop 设备和扩展文件系统时脚本会通过 `sudo` 请求权限。若只下载了 Actions artifact，请把 `expand-image.sh` 与 `image-functions.sh` 放在同一目录后运行。为避免不同厂商“16 GB”卡的实际扇区数差异，优先使用块设备容量模式。
 
 ## 刷写 SD 卡
 
@@ -56,7 +75,7 @@ gzip -dc immortalwrt-*-visionfive2-v1.3b-*-sdcard.img.gz | \
 sync
 ```
 
-Windows 可使用 Rufus 或 balenaEtcher，直接选择下载的 `.img.gz`（若工具版本不支持 gzip，则先解压再写入）。镜像布局要求 16 GB 或更大的 SD 卡。
+Windows 可使用 Rufus 或 balenaEtcher，直接选择下载的 `.img.gz`（若工具版本不支持 gzip，则先解压再写入）。基础镜像可写入更大的 SD 卡；若未提前扩展，rootfs 仍保持 512 MiB。面向 16 GB 及以上 SD 卡使用时，建议先在 Linux 或 WSL2 中生成与卡容量匹配的版本。
 
 ## 首次启动
 
@@ -89,4 +108,4 @@ make -C upstream/immortalwrt defconfig
 
 ## 仍需硬件验证
 
-CI 只能验证可构建性、压缩流和分区表。首次发布后仍需在真实 VisionFive 2 v1.3B 上验证：U-Boot/SD 启动、两网口实际映射与吞吐、12 GiB EXT4 挂载、LuCI/ttyd、Nikki/Mihomo 运行、WireGuard 隧道、重启与断电恢复，以及不同品牌 16 GB SD 卡的实际容量兼容性。
+CI 只能验证可构建性、压缩流、GPT 分区表和一次 768 MiB 自动扩展。首次发布后仍需在真实 VisionFive 2 v1.3B 上验证：U-Boot/SD 启动、两网口实际映射与吞吐、按实际卡容量扩展后的 EXT4 挂载、LuCI/ttyd、Nikki/Mihomo 运行、WireGuard 隧道、重启与断电恢复，以及不同品牌 16 GB SD 卡的实际容量兼容性。
