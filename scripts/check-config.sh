@@ -58,6 +58,15 @@ required_y=(
 	CONFIG_PACKAGE_e2fsprogs
 	CONFIG_PACKAGE_parted
 	CONFIG_PACKAGE_smartmontools
+	CONFIG_PACKAGE_kmod-macvlan
+	CONFIG_PACKAGE_ppp
+	CONFIG_PACKAGE_ppp-mod-pppoe
+	CONFIG_PACKAGE_luci-proto-ppp
+	CONFIG_PACKAGE_mwan3
+	CONFIG_PACKAGE_luci-app-mwan3
+	CONFIG_PACKAGE_luci-i18n-mwan3-zh-cn
+	CONFIG_PACKAGE_luci-app-syncdial
+	CONFIG_PACKAGE_luci-i18n-syncdial-zh-cn
 )
 
 for symbol in "${required_y[@]}"; do
