@@ -74,6 +74,7 @@ jobs:
           cat >> target/linux/starfive/config-6.18 <<'EOF'
           CONFIG_NVME_CORE=y
           CONFIG_BLK_DEV_NVME=y
+          # CONFIG_NVME_MULTIPATH is not set
           EOF
 
           cat > target/linux/starfive/image/jh7110-vf2-uenv.txt <<'EOF'
