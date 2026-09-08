@@ -23,6 +23,8 @@ check_revision() {
 
 check_revision "$repo_root/upstream/immortalwrt" "$IMMORTALWRT_COMMIT" ImmortalWrt
 check_revision "$repo_root/feeds/nikki" "$NIKKI_COMMIT" Nikki
+check_revision "$repo_root/feeds/mwan3/mwan3" "$MWAN3_COMMIT" MWAN3
+check_revision "$repo_root/feeds/mwan3/luci-app-mwan3" "$LUCI_APP_MWAN3_COMMIT" "LuCI MWAN3"
 
 actual_mihomo_version="$(sed -n 's/^PKG_SOURCE_VERSION:=//p' "$repo_root/feeds/nikki/mihomo-meta/Makefile")"
 if [[ "$actual_mihomo_version" != "$MIHOMO_SOURCE_VERSION" ]]; then

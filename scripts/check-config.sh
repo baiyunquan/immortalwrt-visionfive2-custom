@@ -62,18 +62,13 @@ required_y=(
 	CONFIG_PACKAGE_mwan3
 	CONFIG_PACKAGE_luci-app-mwan3
 	CONFIG_PACKAGE_luci-i18n-mwan3-zh-cn
-	CONFIG_PACKAGE_luci-app-syncdial
-	CONFIG_PACKAGE_kmod-macvlan
-	CONFIG_PACKAGE_ppp
-	CONFIG_PACKAGE_ppp-mod-pppoe
-	CONFIG_PACKAGE_ipset
-	CONFIG_PACKAGE_libipset
-	CONFIG_PACKAGE_iptables-mod-conntrack-extra
-	CONFIG_PACKAGE_iptables-mod-ipopt
-	CONFIG_PACKAGE_kmod-ipt-conntrack-extra
-	CONFIG_PACKAGE_kmod-ipt-ipopt
-	CONFIG_PACKAGE_kmod-ipt-ipset
-	CONFIG_PACKAGE_kmod-nf-conncount
+	CONFIG_PACKAGE_libnetfilter-conntrack
+	CONFIG_PACKAGE_kmod-nft-core
+	CONFIG_PACKAGE_nftables-json
+	CONFIG_PACKAGE_ucode-mod-rtnl
+	CONFIG_PACKAGE_ucode-mod-uloop
+	CONFIG_PACKAGE_ucode-mod-socket
+	CONFIG_PACKAGE_ucode-mod-log
 )
 
 for symbol in "${required_y[@]}"; do

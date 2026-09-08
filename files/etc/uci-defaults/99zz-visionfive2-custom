@@ -23,7 +23,7 @@ if uci -q show nikki >/dev/null 2>&1; then
 	uci -q commit nikki
 fi
 
-for service in nikki miniupnpd; do
+for service in nikki miniupnpd mwan3; do
 	if [ -x "/etc/init.d/$service" ]; then
 		"/etc/init.d/$service" disable
 		"/etc/init.d/$service" stop >/dev/null 2>&1 || true

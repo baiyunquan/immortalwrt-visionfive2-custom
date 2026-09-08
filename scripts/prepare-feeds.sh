@@ -5,11 +5,13 @@ set -euo pipefail
 repo_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 source_dir="$repo_root/upstream/immortalwrt"
 nikki_dir="$repo_root/feeds/nikki"
+mwan3_feed_dir="$repo_root/feeds/mwan3"
 
 "$repo_root/scripts/verify-versions.sh"
 
 cp "$source_dir/feeds.conf.default" "$source_dir/feeds.conf"
 printf '\nsrc-link nikki %s\n' "$nikki_dir" >> "$source_dir/feeds.conf"
+printf '\nsrc-link mwan3 %s\n' "$mwan3_feed_dir" >> "$source_dir/feeds.conf"
 
 cd "$source_dir"
 ./scripts/feeds update -a
@@ -21,3 +23,4 @@ for feed in packages luci routing telephony video; do
 	./scripts/feeds install -a -p "$feed"
 done
 ./scripts/feeds install -p nikki nikki luci-app-nikki mihomo-meta
+./scripts/feeds install -f -p mwan3 mwan3 luci-app-mwan3

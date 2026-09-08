@@ -5,6 +5,7 @@
 ## 预装内容
 
 - LuCI、简体中文、Nikki、LuCI Nikki、从源码交叉编译的 Mihomo Meta
+- MWAN3 (native nftables 移植版)、LuCI MWAN3、简体中文支持
 - Argon 主题及其 LuCI 配置页面（Argon 为默认主题）
 - Docker CLI、Docker Engine（dockerd）及支持 `riscv64` 的 LuCI Docker 页面
 - Vlmcsd 及其简体中文 LuCI 页面
@@ -13,11 +14,11 @@
 - curl、GNU wget（`wget-ssl`）、bash、nano、htop、tmux、git、rsync
 - iperf3、tcpdump、ethtool、block-mount、e2fsprogs、parted、smartmontools
 
-Nikki、Vlmcsd 和 UPnP 默认关闭。镜像不包含代理订阅、API Token、预设 WireGuard 密钥或预设登录密码；首次登录后必须立即设置 root 密码。
+Nikki、Vlmcsd、MWAN3 和 UPnP 默认关闭。镜像不包含代理订阅、API Token、预设 WireGuard 密钥或预设登录密码；首次登录后必须立即设置 root 密码。
 
 ## 固定源码
 
-ImmortalWrt 与 OpenWrt-nikki 以 Git submodule 固定到明确 commit，SHA 同时记录在 [`versions.env`](versions.env)。Argon 主题和配置插件由构建脚本检出到同文件记录的固定 commit。Mihomo 由 Nikki feed 的 OpenWrt Go 构建规则针对目标 `riscv64` 从源码交叉编译，不下载其他架构的可执行文件。
+ImmortalWrt、OpenWrt-nikki、MWAN3 与 LuCI MWAN3 以 Git submodule 固定到明确 commit，SHA 同时记录在 [`versions.env`](versions.env)。Argon 主题和配置插件由构建脚本检出到同文件记录的固定 commit。Mihomo 由 Nikki feed 的 OpenWrt Go 构建规则针对目标 `riscv64` 从源码交叉编译，不下载其他架构的可执行文件。
 
 当前固定版本的 ImmortalWrt feeds 已包含维护中的 `vlmcsd`、`luci-app-vlmcsd`、`docker`、`dockerd` 和 `luci-app-docker`，因此直接使用这些官方 feed 包，避免克隆同名第三方包导致 Kconfig 重复定义。`luci-app-dockerman` 明确只允许 ARM/AArch64/x86_64，不能用于本仓库的 RISC-V 目标。`luci-app-accesscontrol` 未加入镜像。
 
