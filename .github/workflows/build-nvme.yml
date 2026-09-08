@@ -74,7 +74,7 @@ jobs:
           cat >> target/linux/starfive/config-6.18 <<'EOF'
           CONFIG_NVME_CORE=y
           CONFIG_BLK_DEV_NVME=y
-          # CONFIG_NVME_HWMON is not set
+          CONFIG_NVME_HWMON is not set
           # CONFIG_NVME_MULTIPATH is not set
           # CONFIG_NVME_VERBOSE_ERRORS is not set
           EOF
